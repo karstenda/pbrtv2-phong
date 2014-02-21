@@ -1,0 +1,60 @@
+############################################################################
+#
+# This RIB file describes the famous "Cornell Box", which is a test scene
+# commonly used to demonstrate radiosity.
+#
+############################################################################
+
+Lookat 280 280 -500 280 280 280 0 1 0
+SurfaceIntegrator "directlighting"
+Camera "perspective" "float fov" [55 ]
+Film "image" "integer xresolution" [640 ] "integer yresolution" [640 ]
+    "string filename" "cornell-box.exr"
+
+PixelFilter "box"
+
+WorldBegin
+############################################################################
+# Light Source Definitions
+############################################################################
+AttributeBegin
+    #Rotate 10 1 0 0 
+    Translate 278.0 278.0 279.500000
+    LightSource "point" "point from" [0.0 200.0 0.0 ] "color I" [412300 341100 298600 ] 
+AttributeEnd
+# ignored Illuminate 1.0 1.0
+############################################################################
+# Wall Definitions
+############################################################################
+AttributeBegin
+    Material "matte" "color Kd" [.5 .5 .5]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 560.0 550.0 0.0 560.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [560.0 550.0 0.0 560.0 550.0 560.0 0.0 550.0 560.0 0.0 550.0 0.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 560.0 0.0 0.0 560.0 0.0 550.0 560.0 560.0 550.0 560.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [0.0 0.0 560.0 0.0 0.0 0.0 0.0 550.0 0.0 0.0 550.0 560.0 ] 
+        Material "matte" "color Kd" [.9 .5 .5]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 0.0 550.0 0.0 560.0 560.0 550.0 560.0 560.0 550.0 0.0 ] 
+AttributeEnd
+############################################################################
+# Short Box Definition
+############################################################################
+AttributeBegin
+    Material "matte" "color Kd" [.3 .5 .3]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [130.0 165.0 65.0 82.0 165.0 225.0 240.0 165.0 272.0 290.0 165.0 114.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [290.0 0.0 114.0 290.0 165.0 114.0 240.0 165.0 272.0 240.0 0.0 272.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [130.0 0.0 65.0 130.0 165.0 65.0 290.0 165.0 114.0 290.0 0.0 114.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [82.0 0.0 225.0 82.0 165.0 225.0 130.0 165.0 65.0 130.0 0.0 65.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [240.0 0.0 272.0 240.0 165.0 272.0 82.0 165.0 225.0 82.0 0.0 225.0 ] 
+AttributeEnd
+############################################################################
+# Tall Box Definition
+############################################################################
+AttributeBegin
+    Material "matte" "color Kd"  [.5 .2 .2]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [423.0 330.0 247.0 265.0 330.0 296.0 314.0 330.0 456.0 472.0 330.0 406.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [423.0 0.0 247.0 423.0 330.0 247.0 472.0 330.0 406.0 472.0 0.0 406.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [472.0 0.0 406.0 472.0 330.0 406.0 314.0 330.0 456.0 314.0 0.0 456.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [314.0 0.0 456.0 314.0 330.0 456.0 265.0 330.0 296.0 265.0 0.0 296.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [265.0 0.0 296.0 265.0 330.0 296.0 423.0 330.0 247.0 423.0 0.0 247.0 ] 
+AttributeEnd
+WorldEnd

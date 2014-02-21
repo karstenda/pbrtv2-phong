@@ -1,0 +1,96 @@
+############################################################################
+#
+# CornellBox containing glossy Stanford Bunny and Utah Teapot
+#
+############################################################################
+
+LookAt 0 0 -1 0 0 1 0 1 0
+
+SurfaceIntegrator "photonmap" 
+	"integer causticphotons" [1000000]
+	"integer indirectphotons" [0]
+	"bool finalgather" ["true"]
+	"integer finalgathersamples" [1024]
+	"integer nused" [100]
+	"float maxdist" [0.1]
+	"float gatherangle" [90]
+	
+Camera "perspective" "float fov" [34]
+Film "image" "integer xresolution" [640] "integer yresolution" [640 ]
+    "string filename" "demo7_with_final_gather.tga"
+
+Sampler "lowdiscrepancy" "integer pixelsamples" [16]
+PixelFilter "box"
+
+WorldBegin
+
+############################################################################
+# Light Source Definitions
+############################################################################
+
+AttributeBegin
+
+    Translate 0 0.274 0.2785
+    Rotate 90 1 0 0
+    LightSource "spot"
+                "float coneangle" 86
+                "point from" [0.0 0.0 0.0 ]
+                "point to" [0.0 0.0 1.0 ] 
+                "color I" [0.4 0.4 0.4]
+
+AttributeEnd
+# ignored Illuminate 1.0 1.0
+
+############################################################################
+# Wall Definitions
+############################################################################
+
+AttributeBegin
+    TransformBegin
+
+	    Scale 0.001 0.001 0.001
+	    Translate -279 -274 0
+
+		Material "matte" "color Kd" [0.5 0.5 0.5]
+		# Floor
+		Shape "trianglemesh" "integer indices" [0 2 1 0 3 2 ] "point P" [552.8 0.0 0.0 0.0 0.0 0.0 0.0 0.0 559.2 549.6 0.0 559.2]
+		# Ceiling
+		Shape "trianglemesh" "integer indices" [0 2 1 0 3 2 ] "point P" [556.0 548.8 0.0 556.0 548.8 559.2 0.0 548.8 559.2 0.0 548.8 0.0]
+		# Back wall
+		Shape "trianglemesh" "integer indices" [0 2 1 0 3 2 ] "point P" [549.6 0.0 559.2 0.0   0.0 559.2 0.0 548.8 559.2 556.0 548.8 559.2]
+		# Right wall
+		Material "matte" "color Kd" [0 0.6 1]
+		Shape "trianglemesh" "integer indices" [0 2 1 0 3 2 ] "point P" [552.8 0.0 0.0 549.6   0.0 559.2 556.0 548.8 559.2	556.0 548.8 0.0]
+		# Left wall
+		Material "matte" "color Kd" [0.22 0.62 0.24]
+		Shape "trianglemesh" "integer indices" [0 2 1 0 3 2 ] "point P" [0.0 0.0 559.2 0.0 0.0 0.0 0.0 548.8 0.0 0.0 548.8 559.2]		
+
+	TransformEnd
+AttributeEnd
+
+AttributeBegin
+    TransformBegin
+    
+    	Scale 0.001 0.001 0.001
+	    Translate -279 -274 0
+	    
+	    #teapot
+	   	Material "phong" "float exponent" [1000.0]
+	    AttributeBegin				
+			Translate 320 0 351
+			Scale 90 90 90
+			Rotate 20 0 1 0
+			Include "geometry/teapot-subdiv.pbrt"
+		AttributeEnd
+		
+		AttributeBegin				
+			Translate 170 0 155
+			Rotate 160 0 1 0
+			Scale -1300 1300 1300
+			Include "geometry/bunny.pbrt"
+		AttributeEnd
+    
+	TransformEnd
+AttributeEnd
+    
+WorldEnd

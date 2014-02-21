@@ -1,0 +1,67 @@
+############################################################################
+#
+# This RIB file describes the famous "Cornell Box", which is a test scene
+# commonly used to demonstrate radiosity.
+#
+############################################################################
+
+LookAt 280 280 -500 280 280 280 0 1 0
+SurfaceIntegrator "photonmap" 
+	"integer causticphotons" [1000000]
+	"integer indirectphotons" [100000]
+	"integer finalgathersamples" [256]
+	"integer nused" [200]
+	"float maxdist" [10]
+	"float gatherangle" [90]
+	
+Camera "perspective" "float fov" [55 ]
+Film "image" "integer xresolution" [640 ] "integer yresolution" [640 ]
+    "string filename" "cornell-mlt.tga"
+
+Sampler "lowdiscrepancy" "integer pixelsamples" [4]
+PixelFilter "box"
+
+WorldBegin
+############################################################################
+# Light Source Definitions
+############################################################################
+AttributeBegin
+    #Rotate 10 1 0 0 
+    Translate 278.0 278.0 279.500000
+    LightSource "point" "point from" [0.0 200.0 0.0 ] "color I" [412300 341100 298600 ] 
+AttributeEnd
+# ignored Illuminate 1.0 1.0
+############################################################################
+# Wall Definitions
+############################################################################
+AttributeBegin
+    Material "matte" "color Kd" [.5 .5 .5]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 560.0 550.0 0.0 560.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [560.0 550.0 0.0 560.0 550.0 560.0 0.0 550.0 560.0 0.0 550.0 0.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 560.0 0.0 0.0 560.0 0.0 550.0 560.0 560.0 550.0 560.0 ] 
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [0.0 0.0 560.0 0.0 0.0 0.0 0.0 550.0 0.0 0.0 550.0 560.0 ] 
+        Material "matte" "color Kd" [.9 .5 .5]
+    Shape "trianglemesh"  "integer indices" [0 2 1 0 3 2 ] "point P" [550.0 0.0 0.0 550.0 0.0 560.0 560.0 550.0 560.0 560.0 550.0 0.0 ] 
+AttributeEnd
+
+
+AttributeBegin
+	Material "mirror" 
+	Translate 170 140 280
+	Scale 1 1 1
+	Rotate -45 0 1 0
+	Rotate -90 1 0 0
+	Include "geometry/killeroo3.pbrt"
+AttributeEnd
+
+AttributeBegin
+	Material "mirror" 
+		#"color Kd" [0 0 0]
+		#"color Ks" [1 1 1]
+		#"float roughness" [40]
+	Translate 400 0 320
+	Scale 1000 1000 1000
+	Rotate -45 0 1 0
+	Include "geometry/dragon.pbrt"
+AttributeEnd
+WorldEnd
