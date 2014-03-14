@@ -25,9 +25,9 @@ BSDF *PerfectPhongMaterial::GetBSDF(const DifferentialGeometry &dgGeom,
 
 	BSDF *b = BSDF_ALLOC(arena, BSDF)(dgs, dgGeom.nn);
 	float phongE = phong->Evaluate(dgs);
-	Blinn *blinn = BSDF_ALLOC(arena,Blinn)(phongE);
 	Spectrum ks = Ks->Evaluate(dgs).Clamp();
-	ReflectiveMicrofacet *microfacet = BSDF_ALLOC(arena, ReflectiveMicrofacet)(ks,blinn);
+    MicrofacetDistribution *md = BSDF_ALLOC(arena, Blinn)(phongE);
+    ReflectiveMicrofacet *microfacet = BSDF_ALLOC(arena, ReflectiveMicrofacet)(ks,md);
 	b->Add(microfacet);
 	return b;
 

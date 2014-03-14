@@ -203,9 +203,13 @@ Transform RotateZ(float angle) {
 
 
 Transform Rotate(float angle, const Vector &axis) {
-    Vector a = Normalize(axis);
     float s = sinf(Radians(angle));
     float c = cosf(Radians(angle));
+    return Rotate(c,s,axis);
+}
+
+Transform Rotate(float c, float s, const Vector &axis) {
+    Vector a = Normalize(axis);
     float m[4][4];
 
     m[0][0] = a.x * a.x + (1.f - a.x * a.x) * c;

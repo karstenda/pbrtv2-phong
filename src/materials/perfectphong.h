@@ -24,7 +24,7 @@ public:
 	PerfectPhongMaterial(Reference<Texture<float> > phongE,
 							Reference<Texture<Spectrum> > Ks,
 							Reference<Texture<float> > bumpMap) :
-			phong(phongE), Ks(Ks), bumpMap(bumpMap) {
+			phong(phongE), bumpMap(bumpMap), Ks(Ks)  {
 	}
 
 	BSDF *GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena) const;

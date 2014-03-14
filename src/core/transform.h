@@ -182,6 +182,7 @@ Transform RotateX(float angle);
 Transform RotateY(float angle);
 Transform RotateZ(float angle);
 Transform Rotate(float angle, const Vector &axis);
+Transform Rotate(float c, float s, const Vector &axis);
 Transform LookAt(const Point &pos, const Point &look, const Vector &up);
 bool SolveLinearSystem2x2(const float A[2][2], const float B[2],
     float *x0, float *x1);
