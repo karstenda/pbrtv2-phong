@@ -280,7 +280,7 @@ float PerfectPhongSurface::Pdf(const Vector &wo, const Vector &wi) const {
 	Vector wh = Normalize(wo + wi);
 	float costheta = AbsCosTheta(wh);
 	// Compute PDF for $\wi$ from Blinn distribution
-	float blinn_pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI * 4.f * Dot(wo, wh));
+	float blinn_pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI);
 
 	if (Dot(wo, wh) <= 0.f) {
 		return 0.f;

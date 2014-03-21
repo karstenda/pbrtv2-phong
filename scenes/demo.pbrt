@@ -19,7 +19,7 @@ SurfaceIntegrator "photonmap"
 	
 Camera "perspective" "float fov" [34]
 Film "image" "integer xresolution" [640] "integer yresolution" [640 ]
-    "string filename" "demo9.tga"
+    "string filename" "demo10.tga"
 
 Sampler "lowdiscrepancy" "integer pixelsamples" [16]
 PixelFilter "box"
