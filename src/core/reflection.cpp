@@ -244,7 +244,12 @@ PerfectPhongSurface::PerfectPhongSurface(const Spectrum &Ks, float n) :
 
 // TODO
 Spectrum PerfectPhongSurface::f(const Vector &wo, const Vector &wi) const {
-	return Spectrum(1.f);
+
+	// Compute perfect specular reflection direction
+	float cosThetaO = AbsCosTheta(wo);
+	Vector wr = Vector(-wo.x, -wo.y, wo.z);
+	float val = (n+2.f)/(2.f * M_PI) *powf(Dot(wi,wr),n)*cosThetaO;
+	return Spectrum(val);
 }
 
 Spectrum PerfectPhongSurface::Sample_f(const Vector &wo, Vector *wi, float u1,
@@ -265,7 +270,7 @@ Spectrum PerfectPhongSurface::Sample_f(const Vector &wo, Vector *wi, float u1,
 		*pdf = 0.f;
 		return Spectrum(0.f);
 	} else {
-		*pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI * 4.f * Dot(wo, vec));
+		*pdf = Pdf(wo, *wi);
 		return f(wo, *wi);
 	}
 }
@@ -276,8 +281,13 @@ float PerfectPhongSurface::Pdf(const Vector &wo, const Vector &wi) const {
 	float costheta = AbsCosTheta(wh);
 	// Compute PDF for $\wi$ from Blinn distribution
 	float blinn_pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI * 4.f * Dot(wo, wh));
-	if (Dot(wo, wh) <= 0.f)
-		blinn_pdf = 0.f;
+
+	if (Dot(wo, wh) <= 0.f) {
+		return 0.f;
+	}
+	if (blinn_pdf > 1) {
+		return 1.f;
+	}
 	return blinn_pdf;
 }
 

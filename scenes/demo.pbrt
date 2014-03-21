@@ -11,9 +11,9 @@ LookAt 0 0 -1 0 0 1 0 1 0
 SurfaceIntegrator "photonmap" 
 	"integer causticphotons" [1000000]
 	"integer indirectphotons" [0]
-	"bool finalgather" ["false"]
-	"integer finalgathersamples" [24]
-	"integer nused" [20]
+	"bool finalgather" ["true"]
+	"integer finalgathersamples" [48]
+	"integer nused" [50]
 	"float maxdist" [0.1]
 	"float gatherangle" [90]
 	
