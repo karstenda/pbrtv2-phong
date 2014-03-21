@@ -238,153 +238,47 @@ float ReflectiveMicrofacet::Pdf(const Vector &wo, const Vector &wi) const {
 	return d->Pdf(wo, wi);
 }
 
-
-VonMisesFischerSurface::VonMisesFischerSurface(const Spectrum &Ks, float kappa) :
-	BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)), Ks(Ks), kappa(kappa) {
-
-}
-
-Spectrum VonMisesFischerSurface::f(const Vector &wo, const Vector &wi) const {
-	return Pdf(wo,wi)*Ks;
-}
-
-Spectrum VonMisesFischerSurface::Sample_f(const Vector &wo, Vector *wi, float u1,
-		float u2, float *pdf) const {
-
-	float c = 2.f/kappa*sinh(kappa);
-	float w = 1/kappa * log( exp(-kappa) + kappa * c * u1 );
-	float v = 2*M_PI*u2;
-	float cosV = cos(v);
-	float sinV = sin(v);
-	float temp = sqrt(1-w*w);
-	Vector vec(temp*cosV,temp*sinV,w);
-
-	// Caluclate the perfect reflection direction.
-	Vector normal = Vector(0,0,1);
-	Vector wr = -wo - 2*Dot(-wo,normal)*normal;
-
-	// Construct rotation vector to the reflecting direction.
-	Vector axis = Cross(vec,wr);
-	float sinTheta = axis.Length();
-	float cosTheta = Dot(axis,wr);
-	Vector u = Normalize(axis);
-	Transform t = Rotate(cosTheta,sinTheta,u);
-
-	// Rotate vec according to the reflection direction
-	*wi = t(vec);
-	*pdf = Pdf(wo,*wi);
-
-	if (!SameHemisphere(wo, *wi))
-		return Spectrum(0.f);
-	return f(wo, *wi);
-}
-
-float VonMisesFischerSurface::Pdf(const Vector &wo, const Vector &wi) const {
-
-	// Check if they are all on the upper hemisphere ...
-	if (!SameHemisphere(wo, wi)) {
-		return 0;
-	}
-
-	// Caluclate the perfect reflection direction.
-	Vector normal = Vector(0,0,1);
-	Vector wr = -wi - 2*Dot(-wi,normal)*normal;
-
-	// return the chance
-	float chance = (kappa/(2*M_PI)) * exp(kappa*(Dot(wo,wr)-1));
-	return chance;
-}
-
 PerfectPhongSurface::PerfectPhongSurface(const Spectrum &Ks, float n) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)), Ks(Ks), n(n) {
 }
 
 // TODO
 Spectrum PerfectPhongSurface::f(const Vector &wo, const Vector &wi) const {
-
 	return Spectrum(1.f);
-
-//	// Check if they are all on the upper hemisphere ...
-//	if (!SameHemisphere(wo, wi)) {
-//		return Spectrum(0.f);
-//	}
-//
-//	// Caluclate the perfect reflection direction.
-//	Vector normal = Vector(0,0,1);
-//	Vector wr = -wi - 2*Dot(-wi,normal)*normal;
-//
-//	// both vectors are normalised so ...
-//	float cosTheta = Dot(wo,wr);
-//
-//	// It's impossible to redirect light in an angle over 90 degrees of the perfect reflection.
-//	if(cosTheta < 0) {
-//		return Spectrum(0);
-//	} else {
-//		return Ks * pow(cosTheta,n);
-//	}
-
 }
 
 Spectrum PerfectPhongSurface::Sample_f(const Vector &wo, Vector *wi, float u1,
 		float u2, float *pdf) const {
 
-	// Caluclate the perfect reflection direction (this time from the eye ray!)
-	Vector normal = Vector(0,0,1);
-	Vector wr = -wo - 2*Dot(-wo,normal)*normal;
+	float costheta = powf(u1, 1.f / (n + 1));
+	float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
+	float phi = u2 * 2.f * M_PI;
+	Vector vec = SphericalDirection(sintheta, costheta, phi);
 
-	// New random generator:
-	RNG rng(u1+u2);
+	if (!SameHemisphere(wo, vec))
+		vec = -vec;
 
-	Vector vec(wr);
+	// Compute incident direction by reflecting about $\vec$
+	*wi = -wo + 2.f * Dot(wo, vec) * vec;
 
-//	// new random sample
-//	u1 = rng.RandomFloat();
-//	u2 = rng.RandomFloat();
-//
-//	// get cosine weighted direction
-//	vec = CosineSampleHemisphere(u1,u2);
-//
-//	// Construct rotation vector to the reflecting direction.
-//	Vector axis = Cross(vec,wr);
-//	float sinTheta = axis.Length();
-//	float cosTheta = Dot(axis,wr);
-//	Vector u = Normalize(axis);
-//	Transform t = Rotate(cosTheta,sinTheta,u);
-
-//	// Rotate vec according to the reflection direction
-//	vec = t(vec);
-
-	// prepare output
-	*pdf = Pdf(wo,vec);
-	*wi = vec;
-
-	if (!SameHemisphere(wo, *wi))
+	if (Dot(wo, vec) <= 0.f) {
+		*pdf = 0.f;
 		return Spectrum(0.f);
-	return f(wo, *wi);
+	} else {
+		*pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI * 4.f * Dot(wo, vec));
+		return f(wo, *wi);
+	}
 }
 
 float PerfectPhongSurface::Pdf(const Vector &wo, const Vector &wi) const {
 
-	return 1.0f;
-
-	// Check if they are all on the upper hemisphere ...
-//	if (wo.z < 0 || wi.z < 0) {
-//		return 0;
-//	}
-//
-//	// Caluclate the perfect reflection direction.
-//	Vector normal = Vector(0,0,1);
-//	Vector wr = -wi - 2*Dot(-wi,normal)*normal;
-//
-//	// It's impossible to redirect light in an angle over 90 degrees of the perfect reflection.
-//	float cosTheta = Dot(wo,wr);
-//	if(cosTheta < 0) {
-//		return 0;
-//	} else {
-//		// Return the chance ...
-//		float sinTheta = Cross(wo,wr).Length();
-//		return 1/M_PI * sinTheta * cosTheta;
-//	}
+	Vector wh = Normalize(wo + wi);
+	float costheta = AbsCosTheta(wh);
+	// Compute PDF for $\wi$ from Blinn distribution
+	float blinn_pdf = ((n + 1.f) * powf(costheta, n)) / (2.f * M_PI * 4.f * Dot(wo, wh));
+	if (Dot(wo, wh) <= 0.f)
+		blinn_pdf = 0.f;
+	return blinn_pdf;
 }
 
 

@@ -144,5 +144,3 @@ GlossyPRTIntegrator *CreateGlossyPRTIntegratorSurfaceIntegrator(const ParamSet &
     float roughness = params.FindOneFloat("roughness", 0.1f);
     return new GlossyPRTIntegrator(Kd, Ks, roughness, lmax, ns);
 }
-
-

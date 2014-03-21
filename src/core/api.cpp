@@ -68,6 +68,7 @@
 #include "integrators/single.h"
 #include "integrators/useprobes.h"
 #include "integrators/whitted.h"
+#include "integrators/normalintegrator.h"
 #include "lights/diffuse.h"
 #include "lights/distant.h"
 #include "lights/goniometric.h"
@@ -558,6 +559,8 @@ SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
         si = CreateDiffusePRTIntegratorSurfaceIntegrator(paramSet);
     else if (name == "glossyprt")
         si = CreateGlossyPRTIntegratorSurfaceIntegrator(paramSet);
+    else if (name == "normal")
+        si = CreateNormalIntegrator(paramSet);
     else
         Warning("Surface integrator \"%s\" unknown.", name.c_str());
 

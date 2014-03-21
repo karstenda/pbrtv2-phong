@@ -476,24 +476,6 @@ private:
 };
 
 
-class VonMisesFischerSurface : public BxDF {
-public:
-    // SpecularReflection Public Methods
-	VonMisesFischerSurface(const Spectrum &Ks, float kappa);
-
-    Spectrum f(const Vector &, const Vector &) const;
-    Spectrum Sample_f(const Vector &wo, Vector *wi,
-                      float u1, float u2, float *pdf) const;
-    float Pdf(const Vector &wo, const Vector &wi) const;
-
-private:
-    // ReflectiveMicrofacet Private Data
-    Spectrum Ks;
-    const float kappa;
-
-};
-
-
 class PerfectPhongSurface : public BxDF {
 public:
     // SpecularReflection Public Methods

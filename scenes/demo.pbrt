@@ -77,12 +77,12 @@ AttributeBegin
 	    Translate -279 -274 0
 	    
 	    #teapot
-	   	Material "phong" "float exponent" [20]
+	   	Material "phong" "float exponent" [100]
 	    AttributeBegin				
 			Translate 320 0 351
 			Scale 90 90 90
 			Rotate 20 0 1 0
-			Include "geometry/teapot-subdiv.pbrt"
+			Include "geometry/room-teapot.pbrt"
 		AttributeEnd
 		
 		AttributeBegin				
