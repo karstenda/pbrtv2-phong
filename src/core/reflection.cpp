@@ -285,9 +285,6 @@ float PerfectPhongSurface::Pdf(const Vector &wo, const Vector &wi) const {
 	if (Dot(wo, wh) <= 0.f) {
 		return 0.f;
 	}
-	if (blinn_pdf > 1) {
-		return 1.f;
-	}
 	return blinn_pdf;
 }
 
