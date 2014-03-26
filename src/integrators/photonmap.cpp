@@ -641,142 +641,142 @@ Spectrum PhotonIntegrator::Li(const Scene *scene, const Renderer *renderer,
     L += LPhoton(causticMap, nCausticPaths, nLookup, lookupBuf, bsdf,
                  rng, isect, wo, maxDistSquared);
 
-    // Compute indirect lighting for photon map integrator
-    if (finalGather && indirectMap != NULL) {
-    #if 1
-        // Do one-bounce final gather for photon map
-        BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
-            BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
-        if (bsdf->NumComponents(nonSpecular) > 0) {
-            // Find indirect photons around point for importance sampling
-            const uint32_t nIndirSamplePhotons = 50;
-            PhotonProcess proc(nIndirSamplePhotons,
-                               arena.Alloc<ClosePhoton>(nIndirSamplePhotons));
-            float searchDist2 = maxDistSquared;
-            while (proc.nFound < nIndirSamplePhotons) {
-                float md2 = searchDist2;
-                proc.nFound = 0;
-                indirectMap->Lookup(p, proc, md2);
-                searchDist2 *= 2.f;
-            }
-
-            // Copy photon directions to local array
-            Vector *photonDirs = arena.Alloc<Vector>(nIndirSamplePhotons);
-            for (uint32_t i = 0; i < nIndirSamplePhotons; ++i)
-                photonDirs[i] = proc.photons[i].photon->wi;
-
-            // Use BSDF to do final gathering
-            Spectrum Li = 0.;
-            for (int i = 0; i < gatherSamples; ++i) {
-                // Sample random direction from BSDF for final gather ray
-                Vector wi;
-                float pdf;
-                BSDFSample bsdfSample(sample, bsdfGatherSampleOffsets, i);
-                Spectrum fr = bsdf->Sample_f(wo, &wi, bsdfSample,
-                                             &pdf, BxDFType(BSDF_ALL & ~BSDF_SPECULAR));
-                if (fr.IsBlack() || pdf == 0.f) continue;
-                Assert(pdf >= 0.f);
-
-                // Trace BSDF final gather ray and accumulate radiance
-                RayDifferential bounceRay(p, wi, ray, isect.rayEpsilon);
-                Intersection gatherIsect;
-                if (scene->Intersect(bounceRay, &gatherIsect)) {
-                    // Compute exitant radiance _Lindir_ using radiance photons
-                    Spectrum Lindir = 0.f;
-                    Normal nGather = gatherIsect.dg.nn;
-                    nGather = Faceforward(nGather, -bounceRay.d);
-                    RadiancePhotonProcess proc(nGather);
-                    float md2 = INFINITY;
-                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
-                    if (proc.photon != NULL)
-                        Lindir = proc.photon->Lo;
-                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
-
-                    // Compute MIS weight for BSDF-sampled gather ray
-
-                    // Compute PDF for photon-sampling of direction _wi_
-                    float photonPdf = 0.f;
-                    float conePdf = UniformConePdf(cosGatherAngle);
-                    for (uint32_t j = 0; j < nIndirSamplePhotons; ++j)
-                        if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
-                            photonPdf += conePdf;
-                    photonPdf /= nIndirSamplePhotons;
-                    float wt = PowerHeuristic(gatherSamples, pdf, gatherSamples, photonPdf);
-                    Li += fr * Lindir * (AbsDot(wi, n) * wt / pdf);
-                }
-            }
-            L += Li / gatherSamples;
-
-            // Use nearby photons to do final gathering
-            Li = 0.;
-            for (int i = 0; i < gatherSamples; ++i) {
-                // Sample random direction using photons for final gather ray
-                BSDFSample gatherSample(sample, indirGatherSampleOffsets, i);
-                int photonNum = min((int)nIndirSamplePhotons - 1,
-                    Floor2Int(gatherSample.uComponent * nIndirSamplePhotons));
-
-                // Sample gather ray direction from _photonNum_
-                Vector vx, vy;
-                CoordinateSystem(photonDirs[photonNum], &vx, &vy);
-                Vector wi = UniformSampleCone(gatherSample.uDir[0], gatherSample.uDir[1],
-                                              cosGatherAngle, vx, vy, photonDirs[photonNum]);
-
-                // Trace photon-sampled final gather ray and accumulate radiance
-                Spectrum fr = bsdf->f(wo, wi);
-                if (fr.IsBlack()) continue;
-                RayDifferential bounceRay(p, wi, ray, isect.rayEpsilon);
-                Intersection gatherIsect;
-                PBRT_PHOTON_MAP_STARTED_GATHER_RAY(&bounceRay);
-                if (scene->Intersect(bounceRay, &gatherIsect)) {
-                    // Compute exitant radiance _Lindir_ using radiance photons
-                    Spectrum Lindir = 0.f;
-                    Normal nGather = gatherIsect.dg.nn;
-                    nGather = Faceforward(nGather, -bounceRay.d);
-                    RadiancePhotonProcess proc(nGather);
-                    float md2 = INFINITY;
-                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
-                    if (proc.photon != NULL)
-                        Lindir = proc.photon->Lo;
-                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
-
-                    // Compute PDF for photon-sampling of direction _wi_
-                    float photonPdf = 0.f;
-                    float conePdf = UniformConePdf(cosGatherAngle);
-                    for (uint32_t j = 0; j < nIndirSamplePhotons; ++j)
-                        if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
-                            photonPdf += conePdf;
-                    photonPdf /= nIndirSamplePhotons;
-
-                    // Compute MIS weight for photon-sampled gather ray
-                    float bsdfPdf = bsdf->Pdf(wo, wi);
-                    float wt = PowerHeuristic(gatherSamples, photonPdf, gatherSamples, bsdfPdf);
-                    Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
-                }
-                PBRT_PHOTON_MAP_FINISHED_GATHER_RAY(&bounceRay);
-            }
-            L += Li / gatherSamples;
-        }
-    #else
-        // for debugging / examples: use the photon map directly
-        Normal nn = Faceforward(n, -ray.d);
-        RadiancePhotonProcess proc(nn);
-        float md2 = INFINITY;
-        radianceMap->Lookup(p, proc, md2);
-        if (proc.photon)
-            L += proc.photon->Lo;
-    #endif
-    }
-    else
-        L += LPhoton(indirectMap, nIndirectPaths, nLookup, lookupBuf,
-                     bsdf, rng, isect, wo, maxDistSquared);
-    if (ray.depth+1 < maxSpecularDepth) {
-        Vector wi;
-        // Trace rays for specular reflection and refraction
-        L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample,
-                             arena);
-        L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample,
-                              arena);
-    }
+//    // Compute indirect lighting for photon map integrator
+//    if (finalGather && indirectMap != NULL) {
+//    #if 1
+//        // Do one-bounce final gather for photon map
+//        BxDFType nonSpecular = BxDFType(BSDF_REFLECTION |
+//            BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY);
+//        if (bsdf->NumComponents(nonSpecular) > 0) {
+//            // Find indirect photons around point for importance sampling
+//            const uint32_t nIndirSamplePhotons = 50;
+//            PhotonProcess proc(nIndirSamplePhotons,
+//                               arena.Alloc<ClosePhoton>(nIndirSamplePhotons));
+//            float searchDist2 = maxDistSquared;
+//            while (proc.nFound < nIndirSamplePhotons) {
+//                float md2 = searchDist2;
+//                proc.nFound = 0;
+//                indirectMap->Lookup(p, proc, md2);
+//                searchDist2 *= 2.f;
+//            }
+//
+//            // Copy photon directions to local array
+//            Vector *photonDirs = arena.Alloc<Vector>(nIndirSamplePhotons);
+//            for (uint32_t i = 0; i < nIndirSamplePhotons; ++i)
+//                photonDirs[i] = proc.photons[i].photon->wi;
+//
+//            // Use BSDF to do final gathering
+//            Spectrum Li = 0.;
+//            for (int i = 0; i < gatherSamples; ++i) {
+//                // Sample random direction from BSDF for final gather ray
+//                Vector wi;
+//                float pdf;
+//                BSDFSample bsdfSample(sample, bsdfGatherSampleOffsets, i);
+//                Spectrum fr = bsdf->Sample_f(wo, &wi, bsdfSample,
+//                                             &pdf, BxDFType(BSDF_ALL & ~BSDF_SPECULAR));
+//                if (fr.IsBlack() || pdf == 0.f) continue;
+//                Assert(pdf >= 0.f);
+//
+//                // Trace BSDF final gather ray and accumulate radiance
+//                RayDifferential bounceRay(p, wi, ray, isect.rayEpsilon);
+//                Intersection gatherIsect;
+//                if (scene->Intersect(bounceRay, &gatherIsect)) {
+//                    // Compute exitant radiance _Lindir_ using radiance photons
+//                    Spectrum Lindir = 0.f;
+//                    Normal nGather = gatherIsect.dg.nn;
+//                    nGather = Faceforward(nGather, -bounceRay.d);
+//                    RadiancePhotonProcess proc(nGather);
+//                    float md2 = INFINITY;
+//                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+//                    if (proc.photon != NULL)
+//                        Lindir = proc.photon->Lo;
+//                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
+//
+//                    // Compute MIS weight for BSDF-sampled gather ray
+//
+//                    // Compute PDF for photon-sampling of direction _wi_
+//                    float photonPdf = 0.f;
+//                    float conePdf = UniformConePdf(cosGatherAngle);
+//                    for (uint32_t j = 0; j < nIndirSamplePhotons; ++j)
+//                        if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
+//                            photonPdf += conePdf;
+//                    photonPdf /= nIndirSamplePhotons;
+//                    float wt = PowerHeuristic(gatherSamples, pdf, gatherSamples, photonPdf);
+//                    Li += fr * Lindir * (AbsDot(wi, n) * wt / pdf);
+//                }
+//            }
+//            L += Li / gatherSamples;
+//
+//            // Use nearby photons to do final gathering
+//            Li = 0.;
+//            for (int i = 0; i < gatherSamples; ++i) {
+//                // Sample random direction using photons for final gather ray
+//                BSDFSample gatherSample(sample, indirGatherSampleOffsets, i);
+//                int photonNum = min((int)nIndirSamplePhotons - 1,
+//                    Floor2Int(gatherSample.uComponent * nIndirSamplePhotons));
+//
+//                // Sample gather ray direction from _photonNum_
+//                Vector vx, vy;
+//                CoordinateSystem(photonDirs[photonNum], &vx, &vy);
+//                Vector wi = UniformSampleCone(gatherSample.uDir[0], gatherSample.uDir[1],
+//                                              cosGatherAngle, vx, vy, photonDirs[photonNum]);
+//
+//                // Trace photon-sampled final gather ray and accumulate radiance
+//                Spectrum fr = bsdf->f(wo, wi);
+//                if (fr.IsBlack()) continue;
+//                RayDifferential bounceRay(p, wi, ray, isect.rayEpsilon);
+//                Intersection gatherIsect;
+//                PBRT_PHOTON_MAP_STARTED_GATHER_RAY(&bounceRay);
+//                if (scene->Intersect(bounceRay, &gatherIsect)) {
+//                    // Compute exitant radiance _Lindir_ using radiance photons
+//                    Spectrum Lindir = 0.f;
+//                    Normal nGather = gatherIsect.dg.nn;
+//                    nGather = Faceforward(nGather, -bounceRay.d);
+//                    RadiancePhotonProcess proc(nGather);
+//                    float md2 = INFINITY;
+//                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
+//                    if (proc.photon != NULL)
+//                        Lindir = proc.photon->Lo;
+//                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
+//
+//                    // Compute PDF for photon-sampling of direction _wi_
+//                    float photonPdf = 0.f;
+//                    float conePdf = UniformConePdf(cosGatherAngle);
+//                    for (uint32_t j = 0; j < nIndirSamplePhotons; ++j)
+//                        if (Dot(photonDirs[j], wi) > .999f * cosGatherAngle)
+//                            photonPdf += conePdf;
+//                    photonPdf /= nIndirSamplePhotons;
+//
+//                    // Compute MIS weight for photon-sampled gather ray
+//                    float bsdfPdf = bsdf->Pdf(wo, wi);
+//                    float wt = PowerHeuristic(gatherSamples, photonPdf, gatherSamples, bsdfPdf);
+//                    Li += fr * Lindir * AbsDot(wi, n) * wt / photonPdf;
+//                }
+//                PBRT_PHOTON_MAP_FINISHED_GATHER_RAY(&bounceRay);
+//            }
+//            L += Li / gatherSamples;
+//        }
+//    #else
+//        // for debugging / examples: use the photon map directly
+//        Normal nn = Faceforward(n, -ray.d);
+//        RadiancePhotonProcess proc(nn);
+//        float md2 = INFINITY;
+//        radianceMap->Lookup(p, proc, md2);
+//        if (proc.photon)
+//            L += proc.photon->Lo;
+//    #endif
+//    }
+//    else
+//        L += LPhoton(indirectMap, nIndirectPaths, nLookup, lookupBuf,
+//                     bsdf, rng, isect, wo, maxDistSquared);
+//    if (ray.depth+1 < maxSpecularDepth) {
+//        Vector wi;
+//        // Trace rays for specular reflection and refraction
+//        L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample,
+//                             arena);
+//        L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample,
+//                              arena);
+//    }
     return L;
 }
 
