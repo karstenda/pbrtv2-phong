@@ -442,7 +442,12 @@ void PhotonShootingTask::Run() {
                 while (scene->Intersect(photonRay, &photonIsect)) {
                     ++nIntersections;
                     // Handle photon/surface intersection
-                    alpha *= renderer->Transmittance(scene, photonRay, NULL, rng, arena);
+
+                    //TODO: I disabled attenuation
+                    // alpha *= renderer->Transmittance(scene, photonRay, NULL, rng, arena);
+
+
+
                     BSDF *photonBSDF = photonIsect.GetBSDF(photonRay, arena);
                     BxDFType specularType = BxDFType(BSDF_REFLECTION |
                                             BSDF_TRANSMISSION | BSDF_SPECULAR);
@@ -641,7 +646,8 @@ Spectrum PhotonIntegrator::Li(const Scene *scene, const Renderer *renderer,
     L += LPhoton(causticMap, nCausticPaths, nLookup, lookupBuf, bsdf,
                  rng, isect, wo, maxDistSquared);
 
-//    // Compute indirect lighting for photon map integrator
+
+    // Compute indirect lighting for photon map integrator
 //    if (finalGather && indirectMap != NULL) {
 //    #if 1
 //        // Do one-bounce final gather for photon map
@@ -690,7 +696,9 @@ Spectrum PhotonIntegrator::Li(const Scene *scene, const Renderer *renderer,
 //                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
 //                    if (proc.photon != NULL)
 //                        Lindir = proc.photon->Lo;
-//                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
+//
+//                    // TODO, i disabled attenuation here
+//                    // Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
 //
 //                    // Compute MIS weight for BSDF-sampled gather ray
 //
@@ -737,7 +745,9 @@ Spectrum PhotonIntegrator::Li(const Scene *scene, const Renderer *renderer,
 //                    radianceMap->Lookup(gatherIsect.dg.p, proc, md2);
 //                    if (proc.photon != NULL)
 //                        Lindir = proc.photon->Lo;
-//                    Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
+//
+//                    // TODO I disabled transmittance here
+//                    // Lindir *= renderer->Transmittance(scene, bounceRay, NULL, rng, arena);
 //
 //                    // Compute PDF for photon-sampling of direction _wi_
 //                    float photonPdf = 0.f;

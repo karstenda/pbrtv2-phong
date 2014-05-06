@@ -18,8 +18,8 @@ SurfaceIntegrator "photonmap"
 	"float gatherangle" [90]
 	
 Camera "perspective" "float fov" [34]
-Film "image" "integer xresolution" [640] "integer yresolution" [640 ]
-    "string filename" "demo10.tga"
+Film "image" "integer xresolution" [640] "integer yresolution" [640]
+    "string filename" "test3.tga"
 
 Sampler "lowdiscrepancy" "integer pixelsamples" [16]
 PixelFilter "box"
@@ -86,7 +86,7 @@ AttributeBegin
 		AttributeEnd
 		
 		AttributeBegin				
-			Translate 170 0 155
+			Translate 190 0 155
 			Rotate 160 0 1 0
 			Scale -1300 1300 1300
 			Include "geometry/bunny.pbrt"
